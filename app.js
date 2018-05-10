@@ -11,12 +11,33 @@ workbookJson.forEach(row => {
     var symbol = row.Symbol;
     console.log(symbol);
     finalStockInfo[symbol] = {};
-    finalStockInfo[symbol]['ComprehensiveRating'] = row['Comp Rating'];
+    finalStockInfo[symbol]['StrengthRating'] = row['RS Rating'];
     getPriceAndVolume(symbol, finalStockInfo);
-    getMovingAverage(symbol, 'EMA', finalStockInfo);
-    getMovingAverage(symbol, 'SMA', finalStockInfo);
+    getMovingAverage(symbol, 'EMA', '100', finalStockInfo);
+    getMovingAverage(symbol, 'EMA', '200', finalStockInfo);
+    getMovingAverage(symbol, 'EMA', '55', finalStockInfo);
+    getMovingAverage(symbol, 'EMA', '34', finalStockInfo);
 });
-setTimeout(function(){console.log(finalStockInfo)}, 9000);
+setTimeout(function(){
+    Object.keys(finalStockInfo).forEach(symbol => {
+        var stockObj = finalStockInfo[symbol];
+        if(stockObj.Volume > 200000){
+            if(stockObj.StrengthRating > 80){
+                if(getPercentDifference(stockObj.Price, stockObj['34'])){
+                    if(getPercentDifference(stockObj.Price, stockObj['55'])){
+                        if(getPercentDifference(stockObj.Price, stockObj['100'])){
+                            if(getPercentDifference(stockObj.Price, stockObj['200'])){
+                                console.log(symbol, stockObj);
+                            }
+                        }
+                    }
+                }
+            }
+            console.log(symbol, finalStockInfo[symbol]);
+        }
+    });
+
+}, 9000);
 
 
 //Taking it in as a prompt
@@ -60,13 +81,8 @@ function getPriceAndVolume(ticker, finalStockInfo){
 }
 
 
-
-
-
-
-
-function getMovingAverage(ticker, type, finalStockInfo){
-    var url = `https://www.alphavantage.co/query?function=${type}&symbol=${ticker}&interval=daily&time_period=55&series_type=close&apikey=GYWUJPM4V0P0WGF8`;
+function getMovingAverage(ticker, type, timePeriod, finalStockInfo){
+    var url = `https://www.alphavantage.co/query?function=${type}&symbol=${ticker}&interval=daily&time_period=${timePeriod}&series_type=close&apikey=GYWUJPM4V0P0WGF8`;
     request(url, {json: true}, (err, res, body) => {
         if (err) { return console.log(err); }
         var dataKey = `Technical Analysis: ${type}`
@@ -81,9 +97,13 @@ function getMovingAverage(ticker, type, finalStockInfo){
                 mostRecentDateKey = date;
             }
         });
-        finalStockInfo[ticker][type]  = res.body[dataKey][mostRecentDateKey][type];
+        finalStockInfo[ticker][timePeriod]  = res.body[dataKey][mostRecentDateKey][type];
         return res.body[dataKey][mostRecentDateKey][type];
     });
+}
+
+function getPercentDifference(price, average){
+    return Math.abs(((price - average) / average)*100);
 }
 
 
